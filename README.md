@@ -4,6 +4,10 @@
 [![ICP](https://img.shields.io/badge/Built%20on-Internet%20Computer-blue)](https://internetcomputer.org/)
 [![Bitcoin](https://img.shields.io/badge/Collateral-Bitcoin-orange)](https://bitcoin.org/)
 
+<img src="images/bollar-logo-word.png" width="66%">
+
+### What's `Bollar`  <img src="images/bollar-logo.png" width="6%">
+
 ## Overview
 
 Bollar Money is a decentralized stablecoin protocol that enables users to mint USD-pegged stablecoins (Bollar) by depositing Bitcoin as collateral on the Internet Computer (ICP) blockchain. Built with Chain Fusion technology, the protocol combines the security of Bitcoin with the programmability of ICP to create a trustless, censorship-resistant stablecoin system.
