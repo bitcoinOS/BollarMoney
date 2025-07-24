@@ -1,0 +1,39 @@
+# Various IDEs and Editors
+.vscode/
+.idea/
+**/*~
+
+# Mac OSX temporary files
+.DS_Store
+**/.DS_Store
+
+
+# dfx temporary files
+.dfx/
+.history
+
+# generated files
+**/declarations/
+
+# rust
+target/
+Cargo.lock
+
+# frontend code
+node_modules/
+dist/
+.svelte-kit/
+
+# environment variables
+.env
+*.bak
+bak
+
+# wasm
+**.wasm
+src/declarations/
+src/*/node_modules
+
+# Claude Code
+CLAUDE.md
+.claude

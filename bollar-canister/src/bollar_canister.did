@@ -1,0 +1,219 @@
+// Candid interface definition for Bollar Money canister
+// Complete interface for frontend integration
+
+service : {
+  // System information and configuration
+  "get_system_config" : () -> (SystemConfig) query;
+  "update_btc_price" : (nat64) -> (Result<(), ProtocolError>);
+  
+  // CDP management
+  "create_cdp" : (text, nat64) -> (ApiResponse nat64);
+  "get_cdp" : (nat64) -> (opt CDP) query;
+  "get_user_cdps" : (principal) -> (vec CDP) query;
+  "get_cdp_preview" : (nat64) -> (ApiResponse CdpPreview) query;
+  
+  // Minting operations
+  "mint_bollar" : (nat64, nat64) -> (ApiResponse nat64);
+  "get_mint_preview" : (nat64, nat64) -> (ApiResponse MintPreview) query;
+  
+  // Closure operations
+  "close_cdp" : (nat64, nat64) -> (ApiResponse ClosureResult);
+  "get_closure_preview" : (nat64) -> (ApiResult ClosurePreview) query;
+  
+  // Liquidation operations
+  "liquidate_cdp" : (nat64) -> (ApiResult LiquidationResult);
+  "get_liquidation_preview" : (nat64) -> (ApiResult LiquidationPreview) query;
+  "find_liquidatable_cdps" : () -> (vec nat64) query;
+  
+  // Price data
+  "get_btc_price" : () -> (nat64) query;
+  
+  // System health and analytics
+  "get_system_health" : () -> (ApiResult SystemHealthDetailed) query;
+  "get_system_health_summary" : () -> (ApiResult SystemHealth) query;
+  "get_cdp_metrics" : (nat64) -> (ApiResult CDPMetrics) query;
+  "get_protocol_analytics" : () -> (ApiResult ProtocolAnalytics) query;
+}
+
+// Complete type definitions for frontend integration
+
+// System configuration
+record SystemConfig {
+  max_collateral_ratio: nat32;      // Basis points (9000 = 90%)
+  liquidation_threshold: nat32;     // Basis points (8500 = 85%)
+  liquidation_penalty: nat32;       // Basis points (500 = 5%)
+  min_collateral_amount: nat64;     // Minimum BTC amount in satoshis
+  min_mint_amount: nat64;           // Minimum Bollar amount in cents
+};
+
+// Collateralized Debt Position
+record CDP {
+  id: nat64;
+  owner: principal;
+  collateral_amount: nat64;         // BTC amount in satoshis
+  minted_amount: nat64;             // Bollar amount in cents
+  created_at: nat64;                // Unix timestamp
+  updated_at: nat64;                // Last update timestamp
+  is_liquidated: bool;
+};
+
+// Price information
+record PriceData {
+  price_cents: nat64;               // BTC price in USD cents
+  timestamp: nat64;                 // Unix timestamp
+  source: text;                     // Data source identifier
+  confidence: nat8;                 // Confidence level (0-100)
+};
+
+// CDP preview for creation planning
+record CdpPreview {
+  max_mintable: nat64;              // Maximum Bollar that can be minted
+  collateral_ratio: nat32;          // Initial collateral ratio in basis points
+  liquidation_price: nat64;         // BTC price that triggers liquidation
+  safety_buffer: nat32;             // Safety margin before liquidation
+};
+
+// Mint operation preview
+record MintPreview {
+  requested_amount: nat64;          // Amount to mint in cents
+  max_mintable: nat64;              // Maximum allowed minting
+  new_total_minted: nat64;          // New total after minting
+  new_collateral_ratio: nat32;      // New ratio after minting (basis points)
+  collateral_value_cents: nat64;    // USD value of collateral
+  liquidation_threshold: nat32;     // Liquidation threshold in basis points
+};
+
+// Closure operation preview
+record ClosurePreview {
+  cdp_id: nat64;
+  minted_amount_cents: nat64;       // Amount to repay
+  collateral_amount_satoshis: nat64; // Total collateral held
+  redemption_amount_satoshis: nat64; // BTC to return to user
+  closure_fee_satoshis: nat64;      // Protocol fee in satoshis
+  btc_price_cents: nat64;           // Current BTC price
+};
+
+record ClosureResult {
+  cdp_id: nat64;
+  redemption_amount_satoshis: nat64; // BTC returned to user
+  closure_fee_satoshis: nat64;       // Protocol fee collected
+  total_repaid_cents: nat64;         // Bollar repaid by user
+};
+
+// Liquidation operation preview
+record LiquidationPreview {
+  is_eligible: bool;                // Whether CDP can be liquidated
+  current_ratio: nat32;             // Current collateral ratio
+  total_repayment: nat64;           // Total Bollar to repay
+  penalty_amount: nat64;            // Liquidation penalty
+  liquidator_reward_satoshis: nat64; // Reward for liquidator
+  protocol_fee_satoshis: nat64;     // Fee collected by protocol
+};
+
+record LiquidationResult {
+  cdp_id: nat64;
+  liquidator_reward_satoshis: nat64; // Reward for liquidator in satoshis
+  protocol_fee_satoshis: nat64;      // Fee collected by protocol in satoshis
+};
+
+// System health detailed information
+record SystemHealthDetailed {
+  total_collateral_satoshis: nat64;
+  total_minted_cents: nat64;
+  average_collateral_ratio: nat32;
+  active_cdps_count: nat64;
+  liquidated_cdps_count: nat64;
+  closed_cdps_count: nat64;
+  btc_price_cents: nat64;
+  system_utilization_ratio: nat32;
+  risk_assessment: RiskLevel;
+  health_score: nat32;              // 0-1000 basis points
+  total_fees_collected_satoshis: nat64;
+  total_liquidation_penalties_satoshis: nat64;
+  total_closure_fees_satoshis: nat64;
+  protocol_revenue_satoshis: nat64;
+  last_updated: nat64;
+};
+
+// Basic system health summary
+record SystemHealth {
+  total_collateral_satoshis: nat64;
+  total_minted_cents: nat64;
+  average_collateral_ratio: nat32;
+  active_cdps_count: nat64;
+  btc_price_cents: nat64;
+  system_utilization_ratio: nat32;
+};
+
+// CDP detailed metrics
+record CDPMetrics {
+  cdp_id: nat64;
+  owner: principal;
+  collateral_amount_satoshis: nat64;
+  minted_amount_cents: nat64;
+  current_ratio: nat32;            // Current collateral ratio
+  max_mintable: nat64;             // Remaining minting capacity
+  liquidation_price: nat64;        // BTC price for liquidation
+  days_until_liquidation_risk: opt nat64; // Estimated days of safety margin
+  health_status: CDPHealthStatus;
+};
+
+// CDP health status enum
+variant CDPHealthStatus {
+  Healthy;
+  Warning;      // Within 10% of liquidation threshold
+  Danger;       // Within 5% of liquidation threshold
+  Liquidatable; // Below liquidation threshold
+};
+
+// Risk assessment levels
+variant RiskLevel {
+  Low;
+  Medium;
+  High;
+  Critical;
+};
+
+// Protocol-wide analytics and statistics
+record ProtocolAnalytics {
+  total_create_events: nat64;
+  total_mint_events: nat64;
+  total_liquidation_events: nat64;
+  total_closure_events: nat64;
+  total_protocol_revenue_satoshis: nat64;
+  total_liquidation_penalties_satoshis: nat64;
+  total_closure_fees_satoshis: nat64;
+  average_collateral_ratio: nat32;
+  utilization_ratio: nat32;
+  unique_users_count: nat64;
+  last_updated: nat64;
+};
+
+// Error types
+variant ProtocolError {
+  InsufficientCollateral: record { required: nat32; actual: nat32 };
+  CDPNotFound: nat64;
+  CDPAlreadyLiquidated: nat64;
+  AmountTooSmall: record { nat64; nat64 };
+  InvalidAmount;
+  UnauthorizedAccess;
+  OraclePriceError: text;
+  RunesOperationFailed: text;
+  CDPNotUndercollateralized: record { id: nat64; current_ratio: nat32; threshold: nat32 };
+};
+
+// Generic API response wrapper
+variant ApiResponse record T {
+  Success: T;
+  Error: ProtocolError;
+};
+variant ApiResult record T {
+  Ok: T;
+  Err: ProtocolError;
+};
+
+// Simple result types for operations that return just success/failure
+variant Result record T record E {
+  Ok: T;
+  Err: E;
+};
