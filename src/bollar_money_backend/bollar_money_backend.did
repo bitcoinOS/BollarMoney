@@ -1,0 +1,106 @@
+type AuthResult = record {
+  success : bool;
+  message : text;
+  token : opt text;
+};
+
+type CoinBalance = record {
+  id : CoinId;
+  value : nat;
+};
+
+type CoinId = variant {
+  btc;
+  rune : record { tick : nat32; decimal : nat32 };
+};
+
+type DepositOffer = record {
+  pool_utxo : opt Utxo;
+  nonce : nat64;
+  btc_price : nat64;
+  max_bollar_mint : nat64;
+};
+
+type Error = variant {
+  Overflow;
+  InvalidPool;
+  InsufficientFunds;
+  InvalidTxid;
+  EmptyPool;
+  InvalidState : text;
+  InvalidSignatureArgs : text;
+  PoolStateExpired : nat64;
+  PositionNotFound;
+  PositionNotLiquidatable;
+  OracleError : text;
+  AuthenticationFailed;
+};
+
+type LiquidationOffer = record {
+  position_id : text;
+  owner : text;
+  btc_collateral : nat64;
+  bollar_debt : nat64;
+  health_factor : nat64;
+  liquidation_bonus : nat64;
+};
+
+type Position = record {
+  id : text;
+  owner : text;
+  btc_collateral : nat64;
+  bollar_debt : nat64;
+  created_at : nat64;
+  last_updated_at : nat64;
+  health_factor : nat64;
+};
+
+type ProtocolMetrics = record {
+  total_btc_locked : nat64;
+  total_bollar_supply : nat64;
+  btc_price : nat64;
+  collateral_ratio : nat8;
+  liquidation_threshold : nat8;
+  positions_count : nat64;
+  liquidatable_positions_count : nat64;
+};
+
+type RepayOffer = record {
+  pool_utxo : Utxo;
+  nonce : nat64;
+  btc_return : nat64;
+};
+
+type Utxo = record {
+  outpoint : text;
+  coins : vec CoinBalance;
+  sats : nat64;
+};
+
+service : {
+  // 用户认证
+  "authenticate" : (address : text, signature : text, message : text) -> (AuthResult);
+  
+  // 抵押和铸造
+  "pre_deposit" : (pool_address : text, btc_amount : nat64) -> (DepositOffer) query;
+  "execute_deposit" : (pool_address : text, signed_psbt : text, bollar_amount : nat64) -> (variant { Ok : text; Err : Error });
+  
+  // 还款和赎回
+  "pre_repay" : (position_id : text, bollar_amount : nat64) -> (RepayOffer) query;
+  "execute_repay" : (position_id : text, signed_psbt : text) -> (variant { Ok : text; Err : Error });
+  
+  // 清算
+  "get_liquidatable_positions" : () -> (vec LiquidationOffer) query;
+  "pre_liquidate" : (position_id : text, bollar_repay_amount : nat64) -> (LiquidationOffer) query;
+  "execute_liquidate" : (position_id : text, signed_psbt : text) -> (variant { Ok : text; Err : Error });
+  
+  // 查询接口
+  "get_user_positions" : (user : text) -> (vec Position) query;
+  "get_pool_info" : (pool_address : text) -> (variant { Ok : record { collateral_ratio : nat8; liquidation_threshold : nat8; btc_locked : nat64; bollar_supply : nat64 }; Err : Error }) query;
+  "get_btc_price" : () -> (nat64) query;
+  "get_protocol_metrics" : () -> (ProtocolMetrics) query;
+  
+  // 管理接口
+  "update_collateral_ratio" : (new_ratio : nat8) -> (bool);
+  "update_liquidation_threshold" : (new_threshold : nat8) -> (bool);
+}

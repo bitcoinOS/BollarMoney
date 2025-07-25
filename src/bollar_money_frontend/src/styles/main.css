@@ -1,0 +1,461 @@
+/* 全局样式 */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --accent-color: #f39c12;
+  --danger-color: #e74c3c;
+  --dark-color: #2c3e50;
+  --light-color: #ecf0f1;
+  --text-color: #333;
+  --border-radius: 4px;
+  --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--light-color);
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  width: 100%;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* 布局样式 */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background-color: var(--dark-color);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: var(--box-shadow);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.nav ul {
+  display: flex;
+  list-style: none;
+}
+
+.nav li {
+  margin-left: 1.5rem;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.nav a:hover {
+  color: var(--accent-color);
+}
+
+.wallet-status {
+  display: flex;
+  align-items: center;
+}
+
+.connected {
+  display: flex;
+  align-items: center;
+}
+
+.address {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: var(--border-radius);
+  margin-right: 8px;
+}
+
+.balance {
+  margin-right: 12px;
+  font-weight: 500;
+}
+
+.connect-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.disconnect-button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.footer {
+  background-color: var(--dark-color);
+  color: white;
+  padding: 1rem 2rem;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-links a {
+  color: white;
+  margin-left: 1rem;
+}
+
+/* 组件样式 */
+.dashboard, .deposit-mint, .repay-withdraw, .liquidation {
+  background-color: white;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--box-shadow);
+}
+
+.dashboard h2, .deposit-mint h2, .repay-withdraw h2, .liquidation h2 {
+  margin-bottom: 1.5rem;
+  color: var(--dark-color);
+}
+
+.metrics-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background-color: var(--light-color);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  text-align: center;
+}
+
+.metric-card h3 {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.positions-panel {
+  margin-bottom: 2rem;
+}
+
+.positions-table {
+  overflow-x: auto;
+}
+
+.positions-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.positions-table th, .positions-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.positions-table th {
+  background-color: var(--light-color);
+  font-weight: 600;
+}
+
+.action-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.actions-panel {
+  margin-top: 2rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.action-button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.action-button:hover {
+  background-color: #2980b9;
+  text-decoration: none;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.input-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.max-button {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.info-panel {
+  background-color: var(--light-color);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.info-label {
+  font-weight: 500;
+}
+
+.submit-button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+.cancel-button {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+  padding: 0.75rem 1.5rem;
+  margin-left: 1rem;
+}
+
+/* 确认页面样式 */
+.confirmation {
+  background-color: var(--light-color);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  margin-top: 1rem;
+}
+
+.confirmation h3 {
+  margin-bottom: 1rem;
+}
+
+.confirmation-details {
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.detail-label {
+  font-weight: 500;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.confirm-button {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.back-button {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+}
+
+/* 结果页面样式 */
+.result {
+  text-align: center;
+  padding: 2rem;
+}
+
+.success-details {
+  margin-top: 1.5rem;
+}
+
+.success-details p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.new-transaction-button {
+  background-color: var(--primary-color);
+  color: white;
+  margin-right: 1rem;
+}
+
+.dashboard-link {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  display: inline-block;
+}
+
+/* 消息样式 */
+.error-message {
+  background-color: #fce4e4;
+  border-left: 4px solid var(--danger-color);
+  color: var(--danger-color);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--border-radius);
+}
+
+.success-message {
+  background-color: #e7f7ef;
+  border-left: 4px solid var(--secondary-color);
+  color: #27ae60;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--border-radius);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .nav {
+    margin: 1rem 0;
+  }
+  
+  .nav ul {
+    flex-direction: column;
+  }
+  
+  .nav li {
+    margin: 0.5rem 0;
+    margin-left: 0;
+  }
+  
+  .wallet-status {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 1rem;
+  }
+  
+  .metrics-panel {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .confirmation-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-button, .back-button {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}
