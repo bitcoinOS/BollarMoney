@@ -3,13 +3,10 @@
 
 use crate::{ExecuteTxGuard, Error, LogLevel, Result, error::log_error};
 use ic_cdk_macros::{query, update};
-use ree_types::orchestrator_interfaces::ensure_testnet4_orchestrator;
 use ree_types::{
-    bitcoin::Network,
-    CoinBalance, CoinId, Intention, bitcoin::psbt::Psbt,
-    exchange_interfaces::*,
+    CoinBalance, CoinId, Intention, bitcoin::psbt::Psbt, bitcoin::Network,
+    exchange_interfaces::*, schnorr::request_ree_pool_address,
     psbt::ree_pool_sign,
-    schnorr::request_ree_pool_address,
 };
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 

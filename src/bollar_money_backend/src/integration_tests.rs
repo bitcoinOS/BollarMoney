@@ -3,18 +3,14 @@
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::{
-        types::*,
         lending::*,
-        liquidation::*,
-        oracle::*,
-        stability::*,
-        auth::*,
+        liquidation::{get_liquidatable_positions, pre_liquidate},
     };
     use candid::Principal;
 
     // 测试用户 Principal
+    #[allow(dead_code)]
     fn test_user() -> Principal {
         Principal::from_text("rdmx6-jaaaa-aaaah-qcaiq-cai").unwrap()
     }
@@ -250,7 +246,7 @@ mod tests {
         assert!(result.token.is_some(), "Should return a token");
         
         // 2. 测试会话验证
-        let token = result.token.unwrap();
+        let _token = result.token.unwrap();
         let verify_result: Result<bool, crate::Error> = Ok(crate::auth::is_authenticated());
         assert!(verify_result.is_ok(), "Session verification should succeed");
         assert!(verify_result.unwrap(), "Session should be valid");
@@ -277,22 +273,17 @@ mod tests {
         let metrics = get_protocol_metrics();
         
         // 验证指标结构
-        assert!(metrics.total_btc_locked >= 0, "Total BTC locked should be non-negative");
-        assert!(metrics.total_bollar_supply >= 0, "Total Bollar supply should be non-negative");
+        // 注意：u64类型总是非负的，所以不需要检查 >= 0
         assert!(metrics.btc_price > 0, "BTC price should be positive");
         assert!(metrics.collateral_ratio > 0 && metrics.collateral_ratio <= 100, "Collateral ratio should be valid");
         assert!(metrics.liquidation_threshold > 0 && metrics.liquidation_threshold <= 100, "Liquidation threshold should be valid");
-        assert!(metrics.positions_count >= 0, "Positions count should be non-negative");
-        assert!(metrics.liquidatable_positions_count >= 0, "Liquidatable positions count should be non-negative");
         
         // 2. 测试系统健康状态
-        let health = crate::stability::get_system_health();
+        let _health = crate::stability::get_system_health();
         
         // 验证健康状态结构
-        assert!(health.total_collateral_value >= 0, "Total collateral value should be non-negative");
-        assert!(health.total_debt_value >= 0, "Total debt value should be non-negative");
-        assert!(health.liquidatable_positions >= 0, "Liquidatable positions should be non-negative");
-        assert!(health.at_risk_positions >= 0, "At-risk positions should be non-negative");
+        // 注意：u64类型总是非负的，所以不需要检查 >= 0
+        // 这里可以添加其他有意义的验证逻辑
     }
 
     #[test]

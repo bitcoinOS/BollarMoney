@@ -5,11 +5,9 @@ use std::borrow::Cow;
 
 // 重新导出 REE 类型，方便使用
 pub use ree_types::{
-    CoinBalance, CoinBalances, CoinId, InputCoin, OutputCoin, Pubkey, Txid, Utxo,
+    CoinId, InputCoin, OutputCoin, Pubkey, Txid, Utxo,
     exchange_interfaces::{
-        ExecuteTxArgs, ExecuteTxResponse, GetMinimalTxValueArgs, GetMinimalTxValueResponse,
-        GetPoolInfoArgs, GetPoolInfoResponse, GetPoolListResponse, NewBlockArgs, NewBlockInfo,
-        NewBlockResponse, RollbackTxArgs, RollbackTxResponse,
+        NewBlockInfo,
     },
 };
 
@@ -25,6 +23,7 @@ pub struct CoinMeta {
 }
 
 impl CoinMeta {
+    #[allow(dead_code)]
     pub fn btc() -> Self {
         Self {
             id: CoinId::btc(),
@@ -33,6 +32,7 @@ impl CoinMeta {
         }
     }
     
+    #[allow(dead_code)]
     pub fn bollar() -> Self {
         Self {
             id: CoinId::rune(72798, 1058), // 示例 Rune ID，实际使用时需要替换

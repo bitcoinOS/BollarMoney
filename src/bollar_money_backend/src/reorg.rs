@@ -1,13 +1,14 @@
 // reorg.rs - 区块链重组处理
 // 这个模块处理比特币区块链的重组事件
 
-use crate::types::NewBlockInfo;
+// use crate::types::NewBlockInfo; // 暂时未使用
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Duplicate block at height {height} with hash {hash}")]
+    #[allow(dead_code)]
     DuplicateBlock { height: u32, hash: String },
     
     #[error("Recoverable reorg detected at height {height} with depth {depth}")]
@@ -27,7 +28,7 @@ pub fn get_max_recoverable_reorg_depth(_network: BitcoinNetwork) -> u32 {
 // 检测区块链重组
 pub fn detect_reorg(
     network: BitcoinNetwork,
-    new_block: crate::types::NewBlockArgs,
+    new_block: crate::types::NewBlockInfo,
 ) -> Result<(), Error> {
     // 检查是否已经有相同高度的区块
     let duplicate = crate::BLOCKS.with_borrow(|blocks| {
@@ -42,7 +43,7 @@ pub fn detect_reorg(
         })
     }).flatten();
     
-    if let Some((height, hash)) = duplicate {
+    if let Some((height, _hash)) = duplicate {
         // 计算重组深度
         let current_height = new_block.block_height;
         let max_depth = get_max_recoverable_reorg_depth(network);
@@ -54,7 +55,7 @@ pub fn detect_reorg(
             
             // 检查是否找到分叉点
             let fork_found = crate::BLOCKS.with_borrow(|blocks| {
-                if let Some(block) = blocks.get(&fork_height) {
+                if let Some(_block) = blocks.get(&fork_height) {
                     // 检查这个区块是否在新链上
                     // 在实际实现中，需要从新链获取这个高度的区块哈希
                     // 这里简化处理，假设找到了分叉点
@@ -99,7 +100,7 @@ pub fn handle_reorg(fork_height: u32, depth: u32) {
     });
     
     // 回滚受影响的交易
-    crate::TX_RECORDS.with_borrow_mut(|tx_records| {
+    crate::TX_RECORDS.with_borrow_mut(|_tx_records| {
         // 在实际实现中，需要找出受影响的交易并回滚
         // 这里简化处理，仅打印日志
         ic_cdk::println!("Rolling back transactions affected by reorg");

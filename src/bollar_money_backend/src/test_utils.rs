@@ -5,7 +5,7 @@
 pub mod mock {
     use candid::Principal;
     use std::cell::RefCell;
-    use std::collections::HashMap;
+    // use std::collections::HashMap; // 暂时未使用
 
     // 模拟的时间戳
     thread_local! {
@@ -47,6 +47,7 @@ pub mod mock {
     }
 
     /// 重置所有模拟状态
+    #[allow(dead_code)]
     pub fn reset() {
         set_time(1_000_000_000_000_000_000);
         set_caller(Principal::anonymous());
@@ -129,7 +130,8 @@ pub mod mock {
     }
 
     /// 模拟价格更新
-    pub fn mock_price_update(price: u64) -> Result<(), String> {
+    #[allow(dead_code)]
+    pub fn mock_price_update(_price: u64) -> Result<(), String> {
         // 在测试环境中，我们直接设置价格
         // 实际实现中，这会通过 oracle 模块处理
         Ok(())

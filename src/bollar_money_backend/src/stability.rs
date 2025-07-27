@@ -1,7 +1,7 @@
 // stability.rs - 稳定机制
 // 这个模块实现抵押率和清算阈值管理功能
 
-use crate::{Error, LogLevel, Result, error::{catch_and_log}, types::*};
+use crate::{Error, LogLevel, Result, error::catch_and_log};
 use ic_cdk_macros::{query, update};
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
@@ -191,7 +191,7 @@ fn update_all_positions_liquidation_status(new_threshold: u8) {
     let positions = crate::get_positions();
     
     // 获取当前 BTC 价格
-    let btc_price = crate::oracle::get_btc_price();
+    let _btc_price = crate::oracle::get_btc_price();
     
     // 检查每个头寸的清算状态
     for position in positions {

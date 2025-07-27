@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod error_tests {
-    use crate::error::{Error, LogLevel, catch_and_log, from_str, from_error, IntoError};
+    use crate::error::{Error, LogLevel, from_str, from_error, IntoError};
     use std::io::{Error as IoError, ErrorKind};
     
     // 测试错误创建

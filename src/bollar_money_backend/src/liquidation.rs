@@ -1,7 +1,7 @@
 // liquidation.rs - 清算逻辑
 // 这个模块实现清算条件检查和清算执行功能
 
-use crate::{Error, LogLevel, Result, error::log_error, types::*};
+use crate::{Error, LogLevel, Result, types::*};
 use ic_cdk_macros::{query, update};
 
 // 清算阈值
@@ -228,6 +228,7 @@ pub async fn execute_liquidate(
 }
 
 // 使用 types 模块中的健康因子计算函数
+#[allow(dead_code)]
 pub fn calculate_health_factor(
     btc_collateral: u64,
     bollar_debt: u64,

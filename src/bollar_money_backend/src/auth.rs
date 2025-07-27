@@ -1,7 +1,7 @@
 // auth.rs - 用户认证和钱包集成
 // 这个模块实现比特币钱包集成和用户身份验证
 
-use crate::{Error, LogLevel, Result, error::{log_error, catch_and_log}, types::*, ic_api};
+use crate::{Error, LogLevel, Result, error::catch_and_log, types::*, ic_api};
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk_macros::{query, update};
 use serde::Serialize;

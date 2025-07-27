@@ -3,18 +3,13 @@
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::{
-        types::*,
         lending::*,
-        liquidation::*,
-        oracle::*,
-        stability::*,
-        auth::*,
     };
     use candid::Principal;
 
     // 测试用户 Principal
+    #[allow(dead_code)]
     fn test_user() -> Principal {
         Principal::from_text("rdmx6-jaaaa-aaaah-qcaiq-cai").unwrap()
     }
@@ -49,7 +44,7 @@ mod tests {
         crate::test_utils::set_time(1_000_000_000_000_000_003);
         
         // 1. 用户认证
-        let (address, token) = authenticate_user().await;
+        let (_address, _token) = authenticate_user().await;
         assert!(crate::auth::is_authenticated());
         
         // 2. 设置 BTC 价格
@@ -84,7 +79,7 @@ mod tests {
         let repay_amount = bollar_amount / 2; // 还款一半
         
         // 预还款查询
-        let repay_offer = pre_repay(position_id.clone(), repay_amount).unwrap();
+        let _repay_offer = pre_repay(position_id.clone(), repay_amount).unwrap();
         
         // 执行还款和赎回
         let _ = execute_repay(
@@ -110,7 +105,7 @@ mod tests {
         // 测试价格波动场景
         
         // 1. 用户认证
-        let (address, _) = authenticate_user().await;
+        let (_address, _) = authenticate_user().await;
         
         // 2. 设置初始 BTC 价格
         let initial_price = 3_000_000u64; // $30,000
@@ -189,7 +184,7 @@ mod tests {
         assert!(!liquidatable_positions.is_empty(), "Should have liquidatable positions");
         
         // 5. 执行清算
-        let liquidation_offer = crate::liquidation::pre_liquidate(
+        let _liquidation_offer = crate::liquidation::pre_liquidate(
             position_id.clone(),
             bollar_amount
         ).unwrap();
@@ -257,7 +252,7 @@ mod tests {
         crate::test_utils::init_test_pool(pool_address.clone());
         
         // 1. 获取当前系统参数
-        let initial_params = crate::stability::get_system_parameters().unwrap();
+        let _initial_params = crate::stability::get_system_parameters().unwrap();
         
         // 2. 更新抵押率
         let new_collateral_ratio = 70u8;

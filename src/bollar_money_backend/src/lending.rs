@@ -1,11 +1,8 @@
 // lending.rs - 借贷核心逻辑
 // 这个模块实现抵押、铸造、还款和赎回功能
 
-use crate::{Error, LogLevel, Result, error::{log_error, IntoError}, types::*};
-use candid::CandidType;
+use crate::{Error, LogLevel, Result, types::*};
 use ic_cdk_macros::{query, update};
-use ree_types::{CoinBalance, bitcoin::Network, schnorr::request_ree_pool_address};
-use serde::{Deserialize, Serialize};
 
 #[query]
 // 预抵押查询 - 返回用户需要的信息来构建抵押交易

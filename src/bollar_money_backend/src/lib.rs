@@ -18,13 +18,11 @@ mod ic_api;
 #[cfg(test)]
 mod test_utils;
 
-use types::{
-    DepositOffer, RepayOffer, LiquidationOffer,
-    ProtocolMetrics, AuthResult,
-    ExecuteTxArgs, ExecuteTxResponse, GetMinimalTxValueArgs, GetMinimalTxValueResponse,
-    GetPoolInfoArgs, GetPoolInfoResponse, GetPoolListResponse, NewBlockArgs, NewBlockResponse,
-    RollbackTxArgs, RollbackTxResponse
-};
+// 注释掉暂时未使用的类型导入
+// use types::{
+//     DepositOffer, RepayOffer, LiquidationOffer,
+//     ProtocolMetrics, AuthResult
+// };
 
 use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
@@ -131,6 +129,7 @@ pub(crate) fn delete_position(position_id: &String) {
 }
 
 // 保存交易记录
+#[allow(dead_code)]
 pub(crate) fn save_tx_record(txid: types::Txid, confirmed: bool, record: TxRecord) {
     TX_RECORDS.with_borrow_mut(|t| {
         t.insert((txid, confirmed), record);
@@ -138,11 +137,13 @@ pub(crate) fn save_tx_record(txid: types::Txid, confirmed: bool, record: TxRecor
 }
 
 // 获取交易记录
+#[allow(dead_code)]
 pub(crate) fn get_tx_record(txid: &types::Txid, confirmed: bool) -> Option<TxRecord> {
     TX_RECORDS.with_borrow(|t| t.get(&(*txid, confirmed)))
 }
 
 // 删除交易记录
+#[allow(dead_code)]
 pub(crate) fn delete_tx_record(txid: &types::Txid, confirmed: bool) {
     TX_RECORDS.with_borrow_mut(|t| {
         t.remove(&(*txid, confirmed));

@@ -86,11 +86,13 @@ pub fn log_error(level: LogLevel, error: &Error, context: Option<&str>) {
 }
 
 /// 从字符串创建错误
+#[allow(dead_code)]
 pub fn from_string(message: String) -> Error {
     Error::Unknown(message)
 }
 
 /// 从 &str 创建错误
+#[allow(dead_code)]
 pub fn from_str(message: &str) -> Error {
     Error::Unknown(message.to_string())
 }
@@ -132,6 +134,7 @@ where
 }
 
 /// 错误转换特性
+#[allow(dead_code)]
 pub trait IntoError<T> {
     fn into_error(self, context: &str) -> Result<T>;
 }

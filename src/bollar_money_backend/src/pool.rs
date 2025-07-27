@@ -1,10 +1,11 @@
 // pool.rs - 资金池管理
 // 这个模块实现资金池的创建、更新和查询功能
 
-use crate::{Error, LogLevel, Result, error::{log_error, IntoError}, types::*};
+use crate::{Error, LogLevel, Result, error::log_error, types::*};
 
 impl Pool {
     // 创建新的资金池
+    #[allow(dead_code)]
     pub fn new(
         meta: CoinMeta,
         pubkey: Pubkey,
@@ -51,6 +52,7 @@ impl Pool {
     }
     
     // 获取当前 BTC 价格
+    #[allow(dead_code)]
     pub fn current_btc_price(&self) -> u64 {
         self.current_state().map(|s| s.btc_price).unwrap_or(0)
     }

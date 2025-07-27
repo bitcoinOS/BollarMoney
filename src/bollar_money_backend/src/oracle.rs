@@ -7,7 +7,7 @@ use ic_cdk_macros::{query, update};
 use serde::Serialize;
 use std::cell::RefCell;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use crate::{Error, LogLevel, Result, error::{log_error, catch_and_log}};
+use crate::{Error, LogLevel, Result, error::log_error};
 
 // Oracle canister ID
 const ORACLE_CANISTER_ID: &str = "ryjl3-tyaaa-aaaaa-aaaba-cai"; // 示例 ID，需替换为实际 Oracle canister ID
@@ -20,7 +20,7 @@ const PRICE_VALIDITY_PERIOD_MS: u64 = 300_000; // 5分钟
 
 // 价格数据结构
 #[derive(CandidType, Clone, Debug, Deserialize, Serialize)]
-struct PriceData {
+pub struct PriceData {
     price: u64,           // 价格 (USD cents)
     timestamp: u64,       // 时间戳 (毫秒)
     source: String,       // 价格来源
@@ -229,7 +229,7 @@ fn check_liquidatable_positions() {
     let positions = crate::get_positions();
     
     // 获取当前 BTC 价格
-    let btc_price = get_btc_price();
+    let _btc_price = get_btc_price();
     
     // 检查每个头寸是否可清算
     for position in positions {
