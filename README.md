@@ -392,27 +392,27 @@ dfx deploy --network ic
 - **Bug fixes**: Must include regression tests
 - **Integration tests**: Must include end-to-end tests
 
-## 📄 License
+## 📄 许可证
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 🙏 Acknowledgments
+## 🙏 致谢
 
-- **Internet Computer Team**: For providing the powerful blockchain platform
-- **Octopus Network**: For REE type definition support
-- **Unisat**: For Bitcoin wallet integration
-- **Open Source Community**: For all contributors and supporters
+- **Internet Computer 团队**: 提供强大的区块链平台
+- **Octopus Network**: REE 类型定义支持
+- **Unisat**: 比特币钱包集成
+- **开源社区**: 所有贡献者和支持者
 
-## 📞 Contact
+## 📞 联系方式
 
-- **Project Homepage**: https://github.com/bifipal/bollar-money
-- **Technical Documentation**: https://docs.bollar.money
-- **Community Discussion**: https://discord.gg/bollar
-- **Issue Feedback**: https://github.com/bifipal/bollar-money/issues
+- **项目主页**: https://github.com/bifipal/bollar-money
+- **技术文档**: https://docs.bollar.money
+- **社区讨论**: https://discord.gg/bollar
+- **问题反馈**: https://github.com/bifipal/bollar-money/issues
 
 ---
 
 <div align="center">
-  <p><strong>⚡ Collateralize Bitcoin, Mint Dollar Stablecoins ⚡</strong></p>
-  <p>Next-generation DeFi protocol built on Internet Computer</p>
+  <p><strong>⚡ 用比特币抵押，铸造美元稳定币 ⚡</strong></p>
+  <p>构建在 Internet Computer 上的下一代 DeFi 协议</p>
 </div>

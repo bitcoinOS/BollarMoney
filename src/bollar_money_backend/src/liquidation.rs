@@ -26,8 +26,15 @@ pub fn get_liquidatable_positions() -> Vec<LiquidationOffer> {
             let pool_address = position.id.split(':').next().unwrap_or("");
             let pool = crate::get_pool(&pool_address.to_string())?;
             
+            // 重新计算当前健康因子
+            let current_health_factor = crate::types::calculate_health_factor(
+                position.btc_collateral,
+                position.bollar_debt,
+                btc_price
+            );
+            
             // 检查头寸是否可清算
-            if position.is_liquidatable(pool.liquidation_threshold) {
+            if current_health_factor < (pool.liquidation_threshold as u64) {
                 // 计算清算奖励
                 let liquidation_bonus = calculate_liquidation_reward(
                     position.bollar_debt,
@@ -42,7 +49,7 @@ pub fn get_liquidatable_positions() -> Vec<LiquidationOffer> {
                     owner: position.owner.clone(),
                     btc_collateral: position.btc_collateral,
                     bollar_debt: position.bollar_debt,
-                    health_factor: position.health_factor,
+                    health_factor: current_health_factor,
                     liquidation_bonus,
                 })
             } else {
@@ -70,8 +77,21 @@ pub fn pre_liquidate(
             let pool = crate::get_pool(&pool_address.to_string())
                 .ok_or(Error::InvalidPool)?;
             
+            // 获取当前 BTC 价格
+            let btc_price = crate::oracle::get_btc_price();
+            if btc_price == 0 {
+                return Err(Error::OracleError("无效的 BTC 价格".to_string()));
+            }
+            
+            // 重新计算当前健康因子
+            let current_health_factor = crate::types::calculate_health_factor(
+                position.btc_collateral,
+                position.bollar_debt,
+                btc_price
+            );
+            
             // 检查头寸是否可清算
-            if !position.is_liquidatable(pool.liquidation_threshold) {
+            if current_health_factor >= (pool.liquidation_threshold as u64) {
                 return Err(Error::PositionNotLiquidatable);
             }
             
@@ -81,12 +101,6 @@ pub fn pre_liquidate(
                     "无效的还款金额，应在 1 到 {} 之间",
                     position.bollar_debt
                 )));
-            }
-            
-            // 获取当前 BTC 价格
-            let btc_price = crate::oracle::get_btc_price();
-            if btc_price == 0 {
-                return Err(Error::OracleError("无效的 BTC 价格".to_string()));
             }
             
             // 计算清算奖励
@@ -129,8 +143,21 @@ pub async fn execute_liquidate(
     let pool = crate::get_pool(&pool_address.to_string())
         .ok_or(Error::InvalidPool)?;
     
+    // 获取当前 BTC 价格
+    let btc_price = crate::oracle::get_btc_price();
+    if btc_price == 0 {
+        return Err(Error::OracleError("无效的 BTC 价格".to_string()));
+    }
+    
+    // 重新计算当前健康因子
+    let current_health_factor = crate::types::calculate_health_factor(
+        position.btc_collateral,
+        position.bollar_debt,
+        btc_price
+    );
+    
     // 检查头寸是否可清算
-    if !position.is_liquidatable(pool.liquidation_threshold) {
+    if current_health_factor >= (pool.liquidation_threshold as u64) {
         return Err(Error::PositionNotLiquidatable);
     }
     
@@ -144,15 +171,22 @@ pub async fn execute_liquidate(
     // 获取调用者身份
     let caller = crate::ic_api::caller().to_string();
     
-    // 获取当前 BTC 价格
-    let btc_price = crate::oracle::get_btc_price();
-    if btc_price == 0 {
-        return Err(Error::OracleError("无效的 BTC 价格".to_string()));
-    }
-    
     // 假设从 PSBT 中提取的 Bollar 数量
     // 在实际实现中，应该从 PSBT 中解析
-    let bollar_repay_amount = position.bollar_debt; // 假设全额清算
+    // 如果健康因子非常低（< 60%），进行全额清算，否则部分清算
+    ic_cdk::println!(
+        "Liquidation decision: health_factor={}, threshold=60, debt={}",
+        current_health_factor,
+        position.bollar_debt
+    );
+    
+    let bollar_repay_amount = if current_health_factor < 60 {
+        ic_cdk::println!("Full liquidation");
+        position.bollar_debt // 全额清算
+    } else {
+        ic_cdk::println!("Partial liquidation");
+        position.bollar_debt / 2 // 部分清算
+    };
     
     // 计算清算奖励
     let liquidation_bonus = calculate_liquidation_reward(

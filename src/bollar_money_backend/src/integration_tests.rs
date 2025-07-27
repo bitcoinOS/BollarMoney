@@ -24,6 +24,11 @@ mod tests {
         "bc1qtest123456789".to_string()
     }
 
+    // 测试 PSBT 字符串
+    fn test_psbt() -> String {
+        "70736274ff01007d020000000100000000000000000000000000000000000000000000000000000000000000000000000000ffffffff01e8030000000000001976a914389ffce9cd9ae88dcc0631e88a821ffdbe9bfe2615".to_string()
+    }
+
     #[tokio::test]
     async fn test_deposit_mint_flow() {
         // 测试抵押-铸造流程
@@ -33,8 +38,11 @@ mod tests {
         let btc_amount = 100_000_000u64; // 1 BTC
         let btc_price = 3_000_000u64; // $30,000
         
+        // 初始化测试池
+        crate::test_utils::init_test_pool(pool_address.clone());
+        
         // 2. 模拟价格更新
-        let price_result = mock_price_update(btc_price);
+        let price_result = crate::oracle::mock_price_update(btc_price);
         assert!(price_result.is_ok(), "Price update should succeed");
         
         // 3. 测试预抵押查询
@@ -46,7 +54,7 @@ mod tests {
         assert!(offer.max_bollar_mint > 0, "Should be able to mint some Bollar");
         
         // 4. 测试执行抵押和铸造
-        let signed_psbt = "test_signed_psbt".to_string();
+        let signed_psbt = test_psbt();
         let bollar_amount = offer.max_bollar_mint / 2; // 铸造一半的最大数量
         
         let deposit_result = execute_deposit(
@@ -73,13 +81,19 @@ mod tests {
     async fn test_repay_withdraw_flow() {
         // 测试还款-赎回流程
         
+        // 设置唯一的测试时间戳
+        crate::test_utils::set_time(1_000_000_000_000_000_001);
+        
         // 1. 首先创建一个头寸（复用抵押-铸造流程）
         let pool_address = test_pool_address();
         let btc_amount = 100_000_000u64; // 1 BTC
         let btc_price = 3_000_000u64; // $30,000
         
+        // 初始化测试池
+        crate::test_utils::init_test_pool(pool_address.clone());
+        
         // 设置价格
-        let _ = mock_price_update(btc_price);
+        let _ = crate::oracle::mock_price_update(btc_price);
         
         // 创建头寸
         let deposit_offer = pre_deposit(pool_address.clone(), btc_amount).unwrap();
@@ -87,7 +101,7 @@ mod tests {
         
         let position_id = execute_deposit(
             pool_address,
-            "test_signed_psbt".to_string(),
+            test_psbt(),
             bollar_amount
         ).await.unwrap();
         
@@ -102,7 +116,7 @@ mod tests {
         // 3. 测试执行还款和赎回
         let repay_result = execute_repay(
             position_id.clone(),
-            "test_signed_psbt".to_string()
+            test_psbt()
         ).await;
         
         assert!(repay_result.is_ok(), "Repay execution should succeed");
@@ -120,13 +134,19 @@ mod tests {
     async fn test_liquidation_flow() {
         // 测试清算流程
         
+        // 设置唯一的测试时间戳
+        crate::test_utils::set_time(1_000_000_000_000_000_002);
+        
         // 1. 创建一个头寸
         let pool_address = test_pool_address();
         let btc_amount = 100_000_000u64; // 1 BTC
         let initial_price = 3_000_000u64; // $30,000
         
+        // 初始化测试池
+        crate::test_utils::init_test_pool(pool_address.clone());
+        
         // 设置初始价格
-        let _ = mock_price_update(initial_price);
+        let _ = crate::oracle::mock_price_update(initial_price);
         
         // 创建头寸
         let deposit_offer = pre_deposit(pool_address.clone(), btc_amount).unwrap();
@@ -134,13 +154,13 @@ mod tests {
         
         let position_id = execute_deposit(
             pool_address,
-            "test_signed_psbt".to_string(),
+            test_psbt(),
             bollar_amount
         ).await.unwrap();
         
         // 2. 模拟价格下跌，使头寸变为可清算
-        let crashed_price = 2_000_000u64; // $20,000 (价格下跌33%)
-        let _ = mock_price_update(crashed_price);
+        let crashed_price = 1_500_000u64; // $15,000 (价格下跌50%)
+        let _ = crate::oracle::mock_price_update(crashed_price);
         
         // 3. 检查可清算头寸
         let liquidatable_positions = get_liquidatable_positions();
@@ -161,44 +181,42 @@ mod tests {
         assert!(offer.liquidation_bonus > 0, "Should have liquidation bonus");
         
         // 5. 测试执行清算
-        let liquidation_result = execute_liquidate(
+        let liquidation_result = crate::liquidation::execute_liquidate(
             position_id.clone(),
-            "test_signed_psbt".to_string()
+            test_psbt()
         ).await;
         
         assert!(liquidation_result.is_ok(), "Liquidation execution should succeed");
         
         // 6. 验证清算结果
-        // 如果是部分清算，头寸应该仍然存在但债务减少
-        // 如果是全额清算，头寸应该被删除
+        // 清算逻辑基于健康因子：如果健康因子 < 60%，进行全额清算，否则部分清算
         let remaining_position = get_position_details(position_id);
-        if liquidate_amount == bollar_amount {
-            // 全额清算，头寸应该被删除
-            assert!(remaining_position.is_err(), "Position should be deleted after full liquidation");
-        } else {
-            // 部分清算，头寸应该仍然存在
-            assert!(remaining_position.is_ok(), "Position should exist after partial liquidation");
-            let pos = remaining_position.unwrap();
-            assert!(pos.bollar_debt < bollar_amount, "Debt should be reduced");
-        }
+        
+        // 由于价格下跌50%，健康因子约为55%，应该进行全额清算
+        // 全额清算后，头寸应该被删除
+        assert!(remaining_position.is_err(), "Position should be deleted after full liquidation due to low health factor");
     }
 
     #[test]
     fn test_stability_parameters() {
         // 测试稳定机制参数管理
         
+        // 初始化测试池
+        let pool_address = test_pool_address();
+        crate::test_utils::init_test_pool(pool_address);
+        
         // 1. 测试更新抵押率
         let new_collateral_ratio = 80u8;
-        let result = update_collateral_ratio(new_collateral_ratio);
+        let result = crate::stability::update_collateral_ratio(new_collateral_ratio);
         assert!(result.is_ok(), "Should be able to update collateral ratio");
         
         // 2. 测试更新清算阈值
         let new_liquidation_threshold = 85u8;
-        let result = update_liquidation_threshold(new_liquidation_threshold);
+        let result = crate::stability::update_liquidation_threshold(new_liquidation_threshold);
         assert!(result.is_ok(), "Should be able to update liquidation threshold");
         
         // 3. 测试获取系统参数
-        let params = get_system_parameters();
+        let params = crate::stability::get_system_parameters();
         assert!(params.is_ok(), "Should be able to get system parameters");
         
         let system_params = params.unwrap();
@@ -207,11 +225,11 @@ mod tests {
         
         // 4. 测试无效参数
         let invalid_ratio = 101u8; // 超过100%
-        let result = update_collateral_ratio(invalid_ratio);
+        let result = crate::stability::update_collateral_ratio(invalid_ratio);
         assert!(result.is_err(), "Should reject invalid collateral ratio");
         
         let invalid_threshold = 0u8; // 0%
-        let result = update_liquidation_threshold(invalid_threshold);
+        let result = crate::stability::update_liquidation_threshold(invalid_threshold);
         assert!(result.is_err(), "Should reject invalid liquidation threshold");
     }
 
@@ -224,7 +242,7 @@ mod tests {
         let signature = "test_signature".to_string();
         let message = "test_message".to_string();
         
-        let auth_result = authenticate(address.clone(), signature, message);
+        let auth_result = crate::auth::authenticate(address.clone(), signature, message);
         assert!(auth_result.is_ok(), "Authentication should succeed");
         
         let result = auth_result.unwrap();
@@ -233,12 +251,12 @@ mod tests {
         
         // 2. 测试会话验证
         let token = result.token.unwrap();
-        let verify_result: Result<bool, crate::Error> = Ok(is_authenticated());
+        let verify_result: Result<bool, crate::Error> = Ok(crate::auth::is_authenticated());
         assert!(verify_result.is_ok(), "Session verification should succeed");
         assert!(verify_result.unwrap(), "Session should be valid");
         
         // 3. 测试会话刷新
-        let refresh_result = refresh_session();
+        let refresh_result = crate::auth::refresh_session();
         assert!(refresh_result.is_ok(), "Session refresh should succeed");
         
         let refreshed = refresh_result.unwrap();
@@ -246,7 +264,7 @@ mod tests {
         assert!(refreshed.token.is_some(), "Should return a new token");
         
         // 4. 测试登出
-        let logout_result = logout();
+        let logout_result = crate::auth::logout();
         assert!(logout_result.is_ok(), "Logout should succeed");
         assert!(logout_result.unwrap(), "Logout should return true");
     }
@@ -268,7 +286,7 @@ mod tests {
         assert!(metrics.liquidatable_positions_count >= 0, "Liquidatable positions count should be non-negative");
         
         // 2. 测试系统健康状态
-        let health = get_system_health();
+        let health = crate::stability::get_system_health();
         
         // 验证健康状态结构
         assert!(health.total_collateral_value >= 0, "Total collateral value should be non-negative");

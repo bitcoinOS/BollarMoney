@@ -67,7 +67,7 @@ impl Pool {
 
     // 获取池的派生路径
     pub fn derivation_path(&self) -> Vec<Vec<u8>> {
-        vec![self.meta.id.to_string().as_bytes().to_vec()]
+        vec![format!("rune{}", self.meta.id.to_string()).as_bytes().to_vec()]
     }
 
     // 验证抵押交易
@@ -128,9 +128,10 @@ impl Pool {
     // 计算可铸造的最大 Bollar 数量
     pub fn calculate_max_bollar(&self, btc_amount: u64, btc_price: u64) -> u64 {
         // 根据抵押率计算可铸造的最大 Bollar 数量
-        // 例如，如果抵押率为 75%，那么可铸造的 Bollar 数量为 BTC 价值的 75%
-        let btc_value = (btc_amount as u128) * (btc_price as u128) / 100_000_000;
-        let max_bollar = btc_value * (self.collateral_ratio as u128) / 100;
+        // 例如，如果抵押率为 90%，那么可铸造的 Bollar 数量为 BTC 价值的 90%
+        // btc_price 是以 USD cents 为单位，所以需要除以 100_000_000 (satoshis) 再除以 100 (cents to dollars)
+        let btc_value_cents = (btc_amount as u128) * (btc_price as u128) / 100_000_000;
+        let max_bollar = btc_value_cents * (self.collateral_ratio as u128) / 100;
         max_bollar.try_into().unwrap_or(0)
     }
 

@@ -192,6 +192,7 @@ pub fn calculate_health_factor(
     let collateral_value = (btc_collateral as u128) * (btc_price as u128) / 100_000_000;
     
     // 计算健康因子 (抵押价值/债务价值 * 100)
+    // bollar_debt 已经是以 cents 为单位，所以直接使用
     let health_factor = collateral_value * 100 / (bollar_debt as u128);
     
     health_factor.try_into().unwrap_or(0)

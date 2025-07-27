@@ -1,8 +1,10 @@
 // stability.rs - 稳定机制
 // 这个模块实现抵押率和清算阈值管理功能
 
-use crate::{Error, LogLevel, Result, error::{log_error, catch_and_log}, types::*};
+use crate::{Error, LogLevel, Result, error::{catch_and_log}, types::*};
 use ic_cdk_macros::{query, update};
+use candid::{CandidType, Deserialize};
+use serde::Serialize;
 
 #[update]
 // 更新抵押率
@@ -280,6 +282,3 @@ pub fn get_system_health() -> SystemHealth {
         at_risk_positions,
     }
 }
-
-use candid::{CandidType, Deserialize};
-use serde::Serialize;

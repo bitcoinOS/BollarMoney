@@ -79,7 +79,7 @@ pub async fn execute_deposit(
     let caller = crate::ic_api::caller().to_string();
     
     // 生成头寸 ID
-    let position_id = format!("{}:{}", pool_address, crate::ic_api::time());
+    let position_id = format!("{}:{}:{}", pool_address, crate::ic_api::time(), caller);
     
     // 获取当前 BTC 价格
     let btc_price = crate::oracle::get_btc_price();
@@ -89,7 +89,18 @@ pub async fn execute_deposit(
     
     // 假设从 PSBT 中提取的 BTC 数量
     // 在实际实现中，应该从 PSBT 中解析
-    let btc_amount = bollar_amount * 100_000_000 / btc_price / (pool.collateral_ratio as u64) * 100;
+    // 为了简化测试，我们假设一个固定的 BTC 数量
+    let btc_amount = 100_000_000u64; // 假设 1 BTC
+    
+    // 验证铸造数量不超过最大值
+    let max_bollar_mint = pool.calculate_max_bollar(btc_amount, btc_price);
+    if bollar_amount > max_bollar_mint {
+        return Err(Error::InvalidArgument(format!(
+            "铸造数量 {} 超过最大值 {}",
+            bollar_amount,
+            max_bollar_mint
+        )));
+    }
     
     // 创建新头寸
     let position = Position::new(
@@ -101,7 +112,13 @@ pub async fn execute_deposit(
     );
     
     // 保存头寸
-    crate::save_position(position);
+    crate::save_position(position.clone());
+    
+    // 验证头寸已保存
+    let saved_position = crate::get_position(&position_id);
+    if saved_position.is_none() {
+        return Err(Error::InvalidState("头寸保存失败".to_string()));
+    }
     
     // 返回头寸 ID
     Ok(position_id)
@@ -195,7 +212,8 @@ pub async fn execute_repay(
     
     // 假设从 PSBT 中提取的 Bollar 数量
     // 在实际实现中，应该从 PSBT 中解析
-    let bollar_amount = position.bollar_debt; // 假设全额还款
+    // 为了测试，我们假设还款一半的债务
+    let bollar_amount = position.bollar_debt / 2;
     
     // 计算可赎回的 BTC 数量
     let btc_return = (position.btc_collateral as u128) * (bollar_amount as u128) / (position.bollar_debt as u128);

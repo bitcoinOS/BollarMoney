@@ -78,10 +78,9 @@ mod exchange_tests {
         let btc_price = 3000000; // $30,000.00
         let max_bollar = pool.calculate_max_bollar(btc_amount, btc_price);
         
-        // 0.001 BTC @ $30,000.00 = $30.00
-        // 90% 抵押率 = $27.00 Bollar
-        // 由于 Bollar 是整数，所以应该是 27 Bollar
-        assert_eq!(max_bollar, 27);
+        // 0.001 BTC @ $30,000.00 = $30.00 = 3000 cents
+        // 90% 抵押率 = 2700 cents Bollar
+        assert_eq!(max_bollar, 2700);
     }
     
     // 测试池地址生成

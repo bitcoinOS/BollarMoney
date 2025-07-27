@@ -103,10 +103,10 @@ mod tests {
     // 测试健康因子计算
     #[test]
     fn test_health_factor_calculation() {
-        // 0.001 BTC @ $30,000.00 = $30.00
-        // 75% 抵押率 = $22.50 Bollar
-        // 健康因子 = ($30.00 / $22.50) * 100 = 133.33...
-        let health_factor = calculate_health_factor(100000, 2250000, 3000000);
+        // 0.001 BTC @ $30,000.00 = $30.00 = 3000 cents
+        // 债务 2250 cents
+        // 健康因子 = (3000 / 2250) * 100 = 133.33...
+        let health_factor = calculate_health_factor(100000, 2250, 3000000);
         assert_eq!(health_factor, 133);
         
         // 无债务情况
@@ -114,7 +114,7 @@ mod tests {
         assert_eq!(health_factor, u64::MAX);
         
         // 价格下跌 50%，健康因子应该减半
-        let health_factor = calculate_health_factor(100000, 2250000, 1500000);
+        let health_factor = calculate_health_factor(100000, 2250, 1500000);
         assert_eq!(health_factor, 66);
     }
     
@@ -126,7 +126,7 @@ mod tests {
             "position1".to_string(),
             "user1".to_string(),
             100000, // 0.001 BTC
-            2250000, // 22.5 Bollar
+            2250, // 2250 cents Bollar
             3000000, // $30,000.00
         );
         
@@ -137,7 +137,7 @@ mod tests {
         assert!(position.is_liquidatable(140));
         
         // 价格下跌，更新头寸
-        position.update(100000, 2250000, 1500000);
+        position.update(100000, 2250, 1500000);
         
         // 健康因子应该减半
         assert_eq!(position.health_factor, 66);
