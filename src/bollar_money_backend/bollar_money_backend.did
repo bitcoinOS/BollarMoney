@@ -103,4 +103,16 @@ service : {
   // 管理接口
   "update_collateral_ratio" : (new_ratio : nat8) -> (bool);
   "update_liquidation_threshold" : (new_threshold : nat8) -> (bool);
+  
+  // 紧急控制接口
+  "get_emergency_state" : () -> (record { state : variant { Normal; Paused; DepositPaused; WithdrawPaused; LiquidationPaused; MaintenanceMode }; reason : text; timestamp : nat64; operator : text; auto_resume_time : opt nat64 }) query;
+  "is_system_operational" : () -> (bool) query;
+  "is_operation_allowed" : (operation : text) -> (bool) query;
+  "emergency_pause" : (reason : text) -> (variant { Ok : null; Err : Error });
+  "emergency_partial_pause" : (operation : text, reason : text) -> (variant { Ok : null; Err : Error });
+  "emergency_resume" : (reason : text) -> (variant { Ok : null; Err : Error });
+  "set_maintenance_mode" : (duration_hours : nat64, reason : text) -> (variant { Ok : null; Err : Error });
+  "add_emergency_operator" : (operator : text) -> (variant { Ok : null; Err : Error });
+  "remove_emergency_operator" : (operator : text) -> (variant { Ok : null; Err : Error });
+  "get_emergency_operators" : () -> (vec text) query;
 }

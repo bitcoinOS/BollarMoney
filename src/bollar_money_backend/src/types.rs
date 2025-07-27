@@ -178,24 +178,19 @@ pub struct ProtocolMetrics {
     pub liquidatable_positions_count: u64,
 }
 
-// 计算头寸健康因子
+// 计算头寸健康因子 (使用安全数学运算)
 pub fn calculate_health_factor(
     btc_collateral: u64,
     bollar_debt: u64,
     btc_price: u64,
 ) -> u64 {
-    if bollar_debt == 0 {
-        return u64::MAX; // 无债务，健康因子无限大
+    match crate::safe_math::safe_calculate_health_factor(btc_collateral, bollar_debt, btc_price) {
+        Ok(health_factor) => health_factor,
+        Err(e) => {
+            ic_cdk::println!("Health factor calculation error: {:?}", e);
+            0 // 返回最低健康因子，触发清算保护
+        }
     }
-    
-    // 计算抵押品价值 (USD cents)
-    let collateral_value = (btc_collateral as u128) * (btc_price as u128) / 100_000_000;
-    
-    // 计算健康因子 (抵押价值/债务价值 * 100)
-    // bollar_debt 已经是以 cents 为单位，所以直接使用
-    let health_factor = collateral_value * 100 / (bollar_debt as u128);
-    
-    health_factor.try_into().unwrap_or(0)
 }
 
 // 为数据结构实现 Storable trait，以便在稳定存储中使用

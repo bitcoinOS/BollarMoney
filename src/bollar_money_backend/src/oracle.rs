@@ -259,7 +259,8 @@ pub fn get_last_valid_price() -> Option<u64> {
     }
 }
 
-// 模拟价格更新 (仅用于测试)
+// 模拟价格更新 (仅用于测试环境)
+#[cfg(feature = "test-mode")]
 #[update]
 pub fn mock_price_update(price: u64) -> Result<()> {
     // 检查调用者是否为控制者
@@ -268,11 +269,63 @@ pub fn mock_price_update(price: u64) -> Result<()> {
         return Err(Error::PermissionDenied("Not authorized".to_string()));
     }
     
+    // 额外的安全检查：验证价格合理性
+    if price == 0 || price > 10_000_000 { // 最大 $100,000
+        return Err(Error::InvalidArgument("价格超出合理范围".to_string()));
+    }
+    
+    // 记录模拟价格更新
+    ic_cdk::println!("WARNING: Using mock price update in test mode: ${}.{}", 
+                     price / 100, price % 100);
+    
     // 创建模拟价格数据
     let price_data = PriceData {
         price,
         timestamp: current_time_millis(),
-        source: "mock".to_string(),
+        source: "mock_test_only".to_string(),
+    };
+    
+    // 存储价格数据
+    store_price_data(price_data);
+    
+    Ok(())
+}
+
+// 生产环境的紧急价格更新 (需要多重签名)
+#[update]
+pub fn emergency_price_update(price: u64, signatures: Vec<String>) -> Result<()> {
+    // 验证调用者权限
+    let caller = crate::ic_api::caller();
+    if !crate::ic_api::is_controller(&caller) {
+        return Err(Error::PermissionDenied("Not authorized".to_string()));
+    }
+    
+    // 验证价格合理性
+    if price == 0 || price > 10_000_000 {
+        return Err(Error::InvalidArgument("价格超出合理范围".to_string()));
+    }
+    
+    // 验证多重签名 (简化实现)
+    if signatures.len() < 3 {
+        return Err(Error::PermissionDenied("需要至少3个签名".to_string()));
+    }
+    
+    // 在实际实现中，这里应该验证每个签名的有效性
+    for (i, signature) in signatures.iter().enumerate() {
+        if signature.is_empty() {
+            return Err(Error::InvalidArgument(format!("签名 {} 无效", i)));
+        }
+    }
+    
+    // 记录紧急价格更新
+    ic_cdk::println!("EMERGENCY: Price updated to ${}.{} with {} signatures", 
+                     price / 100, price % 100, signatures.len());
+    
+    // 创建紧急价格数据
+    let price_data = PriceData {
+        price,
+        timestamp: current_time_millis(),
+        source: "emergency_update".to_string(),
     };
     
     // 存储价格数据

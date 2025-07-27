@@ -134,6 +134,8 @@ pub async fn execute_liquidate(
     position_id: String,
     signed_psbt: String,
 ) -> Result<String> {
+    // 检查紧急状态
+    check_emergency_state!("liquidate");
     // 获取头寸
     let position = crate::get_position(&position_id)
         .ok_or(Error::PositionNotFound)?;
@@ -237,21 +239,28 @@ pub fn calculate_health_factor(
     crate::types::calculate_health_factor(btc_collateral, bollar_debt, btc_price)
 }
 
-// 计算清算奖励
+// 计算清算奖励 (使用安全数学运算)
 pub fn calculate_liquidation_reward(
     bollar_repay_amount: u64,
     btc_collateral: u64,
     bollar_debt: u64,
     btc_price: u64,
 ) -> u64 {
-    // 计算等值的 BTC 数量
-    let btc_equivalent = (bollar_repay_amount as u128) * 100_000_000 / (btc_price as u128);
-    
-    // 添加奖励
-    let btc_with_bonus = btc_equivalent * (100 + LIQUIDATION_BONUS_PERCENT as u128) / 100;
-    
-    // 确保不超过抵押品总量
-    let max_btc = (btc_collateral as u128) * (bollar_repay_amount as u128) / (bollar_debt as u128);
-    
-    std::cmp::min(btc_with_bonus, max_btc).try_into().unwrap_or(0)
+    match crate::safe_math::safe_calculate_liquidation_reward(
+        bollar_repay_amount,
+        btc_collateral,
+        bollar_debt,
+        btc_price,
+        LIQUIDATION_BONUS_PERCENT,
+    ) {
+        Ok(reward) => reward,
+        Err(e) => {
+            crate::error::log_error(
+                crate::LogLevel::Error,
+                &e,
+                Some("calculate_liquidation_reward failed")
+            );
+            0 // 返回 0，防止奖励计算错误
+        }
+    }
 }

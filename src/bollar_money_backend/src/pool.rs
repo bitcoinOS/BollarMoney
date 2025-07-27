@@ -127,14 +127,19 @@ impl Pool {
         )
     }
 
-    // 计算可铸造的最大 Bollar 数量
+    // 计算可铸造的最大 Bollar 数量 (使用安全数学运算)
     pub fn calculate_max_bollar(&self, btc_amount: u64, btc_price: u64) -> u64 {
-        // 根据抵押率计算可铸造的最大 Bollar 数量
-        // 例如，如果抵押率为 90%，那么可铸造的 Bollar 数量为 BTC 价值的 90%
-        // btc_price 是以 USD cents 为单位，所以需要除以 100_000_000 (satoshis) 再除以 100 (cents to dollars)
-        let btc_value_cents = (btc_amount as u128) * (btc_price as u128) / 100_000_000;
-        let max_bollar = btc_value_cents * (self.collateral_ratio as u128) / 100;
-        max_bollar.try_into().unwrap_or(0)
+        match crate::safe_math::safe_calculate_max_bollar(btc_amount, btc_price, self.collateral_ratio) {
+            Ok(max_bollar) => max_bollar,
+            Err(e) => {
+                crate::error::log_error(
+                    crate::LogLevel::Error,
+                    &e,
+                    Some(&format!("calculate_max_bollar failed for pool {}", self.addr))
+                );
+                0 // 返回 0，防止铸造
+            }
+        }
     }
 
     // 回滚池状态

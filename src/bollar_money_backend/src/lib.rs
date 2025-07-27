@@ -14,6 +14,8 @@ mod auth;
 mod integration_tests;
 mod e2e_tests;
 mod ic_api;
+mod safe_math;
+mod emergency;
 
 #[cfg(test)]
 mod test_utils;
@@ -150,6 +152,63 @@ pub(crate) fn delete_tx_record(txid: &types::Txid, confirmed: bool) {
     });
 }
 
+// 全局重入保护
+thread_local! {
+    // 全局执行锁，防止重入攻击
+    static GLOBAL_EXECUTION_LOCK: RefCell<bool> = RefCell::new(false);
+    
+    // 用户操作锁，防止同一用户的并发操作
+    static USER_LOCKS: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
+}
+
+// 全局执行锁，防止重入攻击
+#[must_use]
+pub struct GlobalExecutionGuard;
+
+impl GlobalExecutionGuard {
+    pub fn new() -> Option<Self> {
+        GLOBAL_EXECUTION_LOCK.with(|lock| {
+            if *lock.borrow() {
+                return None;
+            }
+            *lock.borrow_mut() = true;
+            Some(GlobalExecutionGuard)
+        })
+    }
+}
+
+impl Drop for GlobalExecutionGuard {
+    fn drop(&mut self) {
+        GLOBAL_EXECUTION_LOCK.with(|lock| {
+            *lock.borrow_mut() = false;
+        });
+    }
+}
+
+// 用户操作锁，防止同一用户的并发操作
+#[must_use]
+pub struct UserOperationGuard(String);
+
+impl UserOperationGuard {
+    pub fn new(user: String) -> Option<Self> {
+        USER_LOCKS.with(|locks| {
+            if locks.borrow().contains(&user) {
+                return None;
+            }
+            locks.borrow_mut().insert(user.clone());
+            Some(UserOperationGuard(user))
+        })
+    }
+}
+
+impl Drop for UserOperationGuard {
+    fn drop(&mut self) {
+        USER_LOCKS.with(|locks| {
+            locks.borrow_mut().remove(&self.0);
+        });
+    }
+}
+
 // 交易执行锁，防止同一个池的并发交易
 #[must_use]
 pub struct ExecuteTxGuard(String);
@@ -171,6 +230,28 @@ impl Drop for ExecuteTxGuard {
         EXECUTING_POOLS.with_borrow_mut(|executing_pools| {
             executing_pools.remove(&self.0);
         });
+    }
+}
+
+// 组合锁，同时获取多个锁
+#[must_use]
+pub struct CombinedGuard {
+    _global: GlobalExecutionGuard,
+    _user: UserOperationGuard,
+    _pool: ExecuteTxGuard,
+}
+
+impl CombinedGuard {
+    pub fn new(user: String, pool_address: String) -> Option<Self> {
+        let global = GlobalExecutionGuard::new()?;
+        let user_guard = UserOperationGuard::new(user)?;
+        let pool = ExecuteTxGuard::new(pool_address)?;
+        
+        Some(CombinedGuard {
+            _global: global,
+            _user: user_guard,
+            _pool: pool,
+        })
     }
 }
 

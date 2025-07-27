@@ -113,8 +113,8 @@ initialize_system() {
     # 初始化 Bollar 资金池
     dfx canister call bollar_money_backend init_bollar_pool '(75, 80)' --network local
     
-    # 设置初始 BTC 价格（用于测试）
-    dfx canister call bollar_money_backend mock_price_update '(3000000)' --network local
+    # 注意：生产环境不使用模拟价格更新
+    # 价格将通过 Oracle 自动获取
     
     echo "✅ 系统初始化完成"
 }

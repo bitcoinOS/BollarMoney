@@ -1,0 +1,54 @@
+# Bollar Money 生产环境配置
+
+[features]
+# 禁用测试功能
+test-mode = false
+
+[security]
+# 安全配置
+max_transaction_value = 1000000000  # 10 BTC (satoshis)
+min_transaction_value = 10000       # 0.0001 BTC (satoshis)
+max_daily_volume = 10000000000      # 100 BTC (satoshis)
+session_timeout = 86400             # 24 hours (seconds)
+
+[oracle]
+# Oracle 配置
+price_update_interval = 60          # 60 seconds
+price_validity_period = 300         # 5 minutes
+max_price_deviation = 5.0           # 5% maximum deviation
+min_oracle_sources = 3              # 至少3个价格源
+
+[liquidation]
+# 清算配置
+liquidation_bonus = 10              # 10% bonus
+max_liquidation_amount = 500000000  # 5 BTC (satoshis)
+liquidation_delay = 300             # 5 minutes delay
+
+[emergency]
+# 紧急控制配置
+max_maintenance_hours = 72          # 最大维护时间
+min_emergency_operators = 3         # 最少紧急操作员数量
+emergency_multisig_threshold = 2    # 多重签名阈值
+
+[monitoring]
+# 监控配置
+enable_metrics = true
+log_level = "INFO"
+alert_thresholds = [
+    { metric = "large_transaction", value = 100000000 },  # 1 BTC
+    { metric = "price_deviation", value = 10.0 },         # 10%
+    { metric = "liquidation_rate", value = 50 },          # 50 liquidations/hour
+]
+
+[network]
+# 网络配置
+bitcoin_network = "mainnet"
+ic_network = "ic"
+canister_cycles_threshold = 1000000000000  # 1T cycles
+
+[compliance]
+# 合规配置
+kyc_required = false                # 暂不要求 KYC
+aml_monitoring = true              # 启用 AML 监控
+transaction_reporting = true        # 启用交易报告
+max_anonymous_amount = 10000000    # 0.1 BTC (satoshis)
