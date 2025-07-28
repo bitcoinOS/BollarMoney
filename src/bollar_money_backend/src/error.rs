@@ -119,6 +119,120 @@ macro_rules! try_log {
     };
 }
 
+/// 统一的操作结果处理宏
+#[macro_export]
+macro_rules! handle_operation {
+    ($operation:expr, $context:expr) => {
+        $crate::error::catch_and_log(
+            || $operation,
+            $crate::LogLevel::Error,
+            $context
+        )
+    };
+    ($operation:expr, $context:expr, $level:expr) => {
+        $crate::error::catch_and_log(
+            || $operation,
+            $level,
+            $context
+        )
+    };
+}
+
+/// 安全的数值转换宏
+#[macro_export]
+macro_rules! safe_cast {
+    ($value:expr, $target_type:ty) => {
+        $value.try_into()
+            .map_err(|_| $crate::Error::Overflow)
+    };
+}
+
+/// 参数验证宏
+#[macro_export]
+macro_rules! validate_param {
+    ($condition:expr, $message:expr) => {
+        if !($condition) {
+            return Err($crate::Error::InvalidArgument($message.to_string()));
+        }
+    };
+}
+
+/// 权限检查宏
+#[macro_export]
+macro_rules! require_permission {
+    ($check:expr, $message:expr) => {
+        if !($check) {
+            return Err($crate::Error::PermissionDenied($message.to_string()));
+        }
+    };
+}
+
+/// 统一的操作结果处理宏
+#[macro_export]
+macro_rules! handle_operation {
+    ($operation:expr, $context:expr) => {
+        $crate::error::catch_and_log(
+            || $operation,
+            $crate::LogLevel::Error,
+            $context
+        )
+    };
+    ($operation:expr, $context:expr, $level:expr) => {
+        $crate::error::catch_and_log(
+            || $operation,
+            $level,
+            $context
+        )
+    };
+}
+
+/// 输入验证宏
+#[macro_export]
+macro_rules! validate_input {
+    ($condition:expr, $error_msg:expr) => {
+        if !($condition) {
+            return Err($crate::Error::InvalidArgument($error_msg.to_string()));
+        }
+    };
+}
+
+/// 权限检查宏
+#[macro_export]
+macro_rules! require_permission {
+    ($condition:expr, $error_msg:expr) => {
+        if !($condition) {
+            return Err($crate::Error::PermissionDenied($error_msg.to_string()));
+        }
+    };
+}
+
+/// 安全日志宏（过滤敏感信息）
+#[macro_export]
+macro_rules! safe_log {
+    ($level:expr, $message:expr) => {
+        ic_cdk::println!("[{}] {}", 
+            match $level {
+                $crate::LogLevel::Debug => "DEBUG",
+                $crate::LogLevel::Info => "INFO", 
+                $crate::LogLevel::Warning => "WARN",
+                $crate::LogLevel::Error => "ERROR",
+            },
+            $crate::error::sanitize_log_message($message)
+        );
+    };
+    ($level:expr, $format:expr, $($args:expr),+) => {
+        ic_cdk::println!("[{}] {}", 
+            match $level {
+                $crate::LogLevel::Debug => "DEBUG",
+                $crate::LogLevel::Info => "INFO",
+                $crate::LogLevel::Warning => "WARN", 
+                $crate::LogLevel::Error => "ERROR",
+            },
+            $crate::error::sanitize_log_message(&format!($format, $($args),+))
+        );
+    };
+}
+
 /// 捕获并记录错误
 pub fn catch_and_log<F, T>(f: F, level: LogLevel, context: &str) -> Result<T>
 where
@@ -150,4 +264,35 @@ impl<T, E: std::error::Error> IntoError<T> for std::result::Result<T, E> {
             }
         }
     }
+}
+
+/// 清理日志消息，移除敏感信息
+pub fn sanitize_log_message(message: &str) -> String {
+    let mut sanitized = message.to_string();
+    
+    // 移除可能的私钥、签名等敏感信息
+    let sensitive_patterns = [
+        (r"[0-9a-fA-F]{64}", "***PRIVATE_KEY***"),
+        (r"[0-9a-fA-F]{128}", "***SIGNATURE***"),
+        (r"bc1[a-zA-Z0-9]{39,59}", "***BTC_ADDRESS***"),
+        (r"[13][a-km-zA-HJ-NP-Z1-9]{25,34}", "***BTC_ADDRESS***"),
+        (r"0x[a-fA-F0-9]{40}", "***ETH_ADDRESS***"),
+    ];
+    
+    for (pattern, replacement) in &sensitive_patterns {
+        if let Ok(regex) = regex::Regex::new(pattern) {
+            sanitized = regex.replace_all(&sanitized, *replacement).to_string();
+        }
+    }
+    
+    sanitized
+}
+
+/// 操作审计日志
+pub fn audit_log(operation: &str, user: &str, details: &str) {
+    let timestamp = crate::ic_api::time();
+    let sanitized_details = sanitize_log_message(details);
+    
+    ic_cdk::println!("[AUDIT] {} | User: {} | Operation: {} | Details: {}", 
+                     timestamp, user, operation, sanitized_details);
 }

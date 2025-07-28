@@ -65,17 +65,37 @@ pub async fn execute_deposit(
     // 检查紧急状态
     check_emergency_state!("deposit");
     
+    // 检查权限
+    require_permission!(
+        crate::access_control::has_permission(ic_api::caller(), crate::access_control::Permission::Deposit),
+        "Deposit permission required"
+    );
+    
     // 获取组合锁，防止重入攻击
     let _guard = crate::CombinedGuard::new(caller.clone(), pool_address.clone())
         .ok_or(Error::SystemError("系统繁忙，请稍后重试".to_string()))?;
-    // 验证参数
-    if bollar_amount == 0 {
-        return Err(Error::InvalidArgument("Bollar 数量不能为零".to_string()));
-    }
     
-    // 获取池
-    let pool = crate::get_pool(&pool_address)
+    // 开始状态事务
+    let tx_id = crate::state_manager::StateManager::begin_transaction(
+        crate::state_manager::StateOperation::CreatePosition
+    )?;
+    // 性能测量开始
+    let _measurement = crate::performance::PerformanceManager::start_measurement("execute_deposit");
+    
+    // 验证参数
+    crate::input_validation::validate_bollar_amount(bollar_amount, "execute_deposit")?;
+    crate::input_validation::validate_psbt_hex(&signed_psbt, "execute_deposit")?;
+    crate::input_validation::validate_bitcoin_address(&pool_address, "execute_deposit")?;
+    
+    // 尝试从缓存获取池，否则从存储获取
+    let pool = crate::performance::get_cached_pool(&pool_address)
+        .or_else(|| crate::get_pool(&pool_address))
         .ok_or(Error::InvalidPool)?;
+    
+    // 如果从存储获取，则缓存它
+    if crate::performance::get_cached_pool(&pool_address).is_none() {
+        crate::performance::cache_pool(pool.clone());
+    }
     
     // 解码并验证 PSBT
     let psbt = validate_and_parse_psbt(&signed_psbt, &pool_address, bollar_amount)?;
@@ -113,14 +133,32 @@ pub async fn execute_deposit(
         btc_price,
     );
     
-    // 保存头寸
+    // 保存头寸并缓存
     crate::save_position(position.clone());
+    crate::performance::cache_position(position.clone());
     
     // 验证头寸已保存
     let saved_position = crate::get_position(&position_id);
     if saved_position.is_none() {
+        // 回滚事务
+        if let Err(e) = crate::state_manager::StateManager::rollback_transaction(tx_id, "头寸保存失败".to_string()) {
+            secure_log_error!(LogCategory::System, format!("Transaction rollback failed: {:?}", e));
+        }
         return Err(Error::InvalidState("头寸保存失败".to_string()));
     }
+    
+    // 提交事务
+    if let Err(e) = crate::state_manager::StateManager::commit_transaction(tx_id) {
+        secure_log_error!(LogCategory::System, format!("Transaction commit failed: {:?}", e));
+        return Err(e);
+    }
+    
+    // 记录成功的抵押操作
+    secure_log_info!(
+        LogCategory::Transaction,
+        format!("Deposit executed successfully: position_id={}", position_id),
+        format!("BTC: {}, Bollar: {}, User: {}", btc_amount, bollar_amount, caller)
+    );
     
     // 返回头寸 ID
     Ok(position_id)
@@ -200,9 +238,20 @@ pub async fn execute_repay(
     // 检查紧急状态
     check_emergency_state!("repay");
     
+    // 检查权限
+    require_permission!(
+        crate::access_control::has_permission(ic_api::caller(), crate::access_control::Permission::Withdraw),
+        "Withdraw permission required"
+    );
+    
     // 获取组合锁，防止重入攻击
     let _guard = crate::CombinedGuard::new(caller.clone(), pool_address)
         .ok_or(Error::SystemError("系统繁忙，请稍后重试".to_string()))?;
+    
+    // 开始状态事务
+    let tx_id = crate::state_manager::StateManager::begin_transaction(
+        crate::state_manager::StateOperation::UpdatePosition
+    )?;
     // 获取头寸
     let position = crate::get_position(&position_id)
         .ok_or(Error::PositionNotFound)?;
@@ -232,6 +281,11 @@ pub async fn execute_repay(
     // 如果是全额还款，删除头寸
     if bollar_amount == position.bollar_debt {
         crate::delete_position(&position_id);
+        secure_log_info!(
+            LogCategory::Transaction,
+            format!("Position fully repaid and deleted: {}", position_id),
+            format!("User: {}", caller)
+        );
     } else {
         // 否则更新头寸
         let mut updated_position = position.clone();
@@ -241,6 +295,17 @@ pub async fn execute_repay(
             btc_price,
         );
         crate::save_position(updated_position);
+        secure_log_info!(
+            LogCategory::Transaction,
+            format!("Position partially repaid: {}", position_id),
+            format!("Repaid: {}, Remaining debt: {}", bollar_amount, position.bollar_debt - bollar_amount)
+        );
+    }
+    
+    // 提交事务
+    if let Err(e) = crate::state_manager::StateManager::commit_transaction(tx_id) {
+        secure_log_error!(LogCategory::System, format!("Transaction commit failed: {:?}", e));
+        return Err(e);
     }
     
     // 返回交易 ID

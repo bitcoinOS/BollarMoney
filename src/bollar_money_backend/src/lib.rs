@@ -16,6 +16,14 @@ mod e2e_tests;
 mod ic_api;
 mod safe_math;
 mod emergency;
+mod access_control;
+mod secure_logging;
+mod state_manager;
+mod medium_priority_tests;
+mod input_validation;
+mod monitoring;
+mod performance;
+mod backup_recovery;
 
 #[cfg(test)]
 mod test_utils;

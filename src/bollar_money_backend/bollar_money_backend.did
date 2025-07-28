@@ -115,4 +115,34 @@ service : {
   "add_emergency_operator" : (operator : text) -> (variant { Ok : null; Err : Error });
   "remove_emergency_operator" : (operator : text) -> (variant { Ok : null; Err : Error });
   "get_emergency_operators" : () -> (vec text) query;
+  
+  // 访问控制接口
+  "has_permission" : (principal : principal, permission : variant { Deposit; Withdraw; Liquidate; UpdateCollateralRatio; UpdateLiquidationThreshold; ManagePool; EmergencyPause; EmergencyResume; EmergencyOperator; ViewMetrics; ViewAllPositions; SystemMaintenance; SuperAdmin }) -> (bool) query;
+  "grant_role" : (principal : principal, role : variant { User; Liquidator; PoolManager; EmergencyOperator; SystemAdmin; SuperAdmin }, reason : text) -> (variant { Ok : null; Err : Error });
+  "revoke_role" : (principal : principal, role : variant { User; Liquidator; PoolManager; EmergencyOperator; SystemAdmin; SuperAdmin }, reason : text) -> (variant { Ok : null; Err : Error });
+  "initialize_default_permissions" : () -> (variant { Ok : null; Err : Error });
+  
+  // 状态管理接口
+  "validate_system_state" : () -> (variant { Ok : record { valid : bool; errors : vec text; warnings : vec text; total_btc_locked : nat64; total_bollar_supply : nat64; positions_count : nat64; pools_count : nat64 }; Err : Error });
+  "create_manual_snapshot" : (reason : text) -> (variant { Ok : text; Err : Error });
+  "get_state_snapshots" : (limit : opt nat64) -> (vec record { id : text; timestamp : nat64; operation : variant { CreatePosition; UpdatePosition; DeletePosition; UpdatePool; CreatePool; UpdatePrice; Liquidation; Emergency }; metadata : vec record { text; text } }) query;
+  
+  // 安全日志接口
+  "get_logs" : (level_filter : opt variant { Debug; Info; Warning; Error; Critical }, category_filter : opt variant { Authentication; Transaction; Liquidation; Emergency; Security; System; Audit }, limit : opt nat64) -> (vec record { id : text; timestamp : nat64; level : variant { Debug; Info; Warning; Error; Critical }; category : variant { Authentication; Transaction; Liquidation; Emergency; Security; System; Audit }; principal : opt principal; message : text; context : opt text }) query;
+  
+  // 监控接口
+  "get_metric" : (name : text, limit : opt nat64) -> (opt record { name : text; metric_type : variant { Counter; Gauge; Histogram; Timer }; description : text; unit : text; data_points : vec record { timestamp : nat64; value : float64; labels : vec record { text; text } } }) query;
+  "get_system_health" : () -> (record { overall_status : variant { Healthy; Warning; Critical; Unknown }; components : vec record { text; record { status : variant { Healthy; Warning; Critical; Unknown }; message : text; last_check : nat64; metrics : vec record { text; float64 } } }; last_updated : nat64 }) query;
+  "get_active_alerts" : () -> (vec record { id : text; rule_id : text; metric_name : text; current_value : float64; threshold : float64; severity : variant { Info; Warning; Error; Critical }; message : text; triggered_at : nat64; resolved_at : opt nat64; acknowledged : bool }) query;
+  "acknowledge_alert" : (alert_id : text) -> (variant { Ok : null; Err : Error });
+  
+  // 性能接口
+  "get_performance_metrics" : () -> (record { avg_response_time_ms : float64; max_response_time_ms : float64; min_response_time_ms : float64; total_requests : nat64; error_count : nat64; cache_hit_rate : float64; memory_usage_bytes : nat64; cpu_usage_percent : float64 }) query;
+  "cleanup_caches" : () -> (variant { Ok : record { position_cache_expired : nat64; pool_cache_expired : nat64; metrics_cache_expired : nat64 }; Err : Error });
+  "warm_up_cache" : () -> (variant { Ok : null; Err : Error });
+  
+  // 备份恢复接口
+  "get_backups" : () -> (vec record { id : text; backup_type : variant { Full; Incremental; Emergency }; status : variant { InProgress; Completed; Failed; Corrupted }; created_at : nat64; completed_at : opt nat64; size_bytes : nat64; checksum : text; description : text; created_by : text }) query;
+  "create_full_backup" : (description : text) -> (variant { Ok : text; Err : Error });
+  "restore_from_backup" : (options : record { backup_id : text; restore_pools : bool; restore_positions : bool; restore_config : bool; verify_integrity : bool; create_recovery_point : bool }) -> (variant { Ok : record { success : bool; restored_pools : nat64; restored_positions : nat64; errors : vec text; warnings : vec text; recovery_time_ms : nat64 }; Err : Error });
 }

@@ -136,6 +136,17 @@ pub async fn execute_liquidate(
 ) -> Result<String> {
     // 检查紧急状态
     check_emergency_state!("liquidate");
+    
+    // 检查权限
+    require_permission!(
+        crate::access_control::has_permission(ic_api::caller(), crate::access_control::Permission::Liquidate),
+        "Liquidation permission required"
+    );
+    
+    // 开始状态事务
+    let tx_id = crate::state_manager::StateManager::begin_transaction(
+        crate::state_manager::StateOperation::Liquidation
+    )?;
     // 获取头寸
     let position = crate::get_position(&position_id)
         .ok_or(Error::PositionNotFound)?;
@@ -216,13 +227,18 @@ pub async fn execute_liquidate(
         crate::save_position(updated_position);
     }
     
+    // 提交事务
+    if let Err(e) = crate::state_manager::StateManager::commit_transaction(tx_id) {
+        secure_log_error!(LogCategory::System, format!("Liquidation transaction commit failed: {:?}", e));
+        return Err(e);
+    }
+    
     // 记录清算事件
-    ic_cdk::println!(
-        "Liquidation executed: position_id={}, liquidator={}, bollar_repay={}, btc_reward={}",
-        position_id,
-        caller,
-        bollar_repay_amount,
-        liquidator_btc_with_bonus
+    secure_log_info!(
+        LogCategory::Liquidation,
+        format!("Liquidation executed: position_id={}", position_id),
+        format!("Liquidator: {}, Bollar repaid: {}, BTC reward: {}", 
+                caller, bollar_repay_amount, liquidator_btc_with_bonus)
     );
     
     // 返回交易 ID

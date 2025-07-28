@@ -27,6 +27,8 @@ rand = "0.8.5"
 hmac = "0.12.1"
 pbkdf2 = "0.12.2"
 aes-gcm = "0.10.3"
+regex = "1.10.2"
+regex = "1.10.2"
 
 [dev-dependencies]
 tokio = { version = "1.46.1", features = ["full"] }
